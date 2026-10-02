@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>My Profile | LifeLink</title>
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body class="dashboard-page profile-page">
+	<div class="dashboard-shell">
+		<aside class="dashboard-sidebar" aria-label="Donor dashboard navigation">
+			<details class="sidebar-menu" open>
+				<summary class="sidebar-toggle" aria-label="Toggle dashboard navigation">
+					<span class="sidebar-toggle-icon" aria-hidden="true">☰</span>
+					<span>Menu</span>
+				</summary>
+
+				<div class="sidebar-inner">
+					<a class="brand dashboard-brand" href="../index.html" aria-label="LifeLink home">
+						<span class="brand-mark" aria-hidden="true">+</span>
+						<span>LifeLink</span>
+					</a>
+
+					<nav class="sidebar-nav" aria-label="Donor dashboard pages">
+						<p class="sidebar-label">Workspace</p>
+						<a class="sidebar-link" href="dashboard.html">
+							<span class="sidebar-link-mark" aria-hidden="true">01</span>
+							<span>Dashboard</span>
+						</a>
+						<a class="sidebar-link is-active" href="profile.html" aria-current="page">
+							<span class="sidebar-link-mark" aria-hidden="true">02</span>
+							<span>Profile</span>
+						</a>
+						<a class="sidebar-link" href="availability.html">
+							<span class="sidebar-link-mark" aria-hidden="true">03</span>
+							<span>Availability</span>
+						</a>
+						<a class="sidebar-link" href="requests.html">
+							<span class="sidebar-link-mark" aria-hidden="true">04</span>
+							<span>Blood Requests</span>
+						</a>
+						<a class="sidebar-link" href="history.html">
+							<span class="sidebar-link-mark" aria-hidden="true">05</span>
+							<span>Donation History</span>
+						</a>
+					</nav>
+
+					<button class="sidebar-logout" id="logout-button" type="button">
+						<span aria-hidden="true">↪</span>
+						<span>Logout</span>
+					</button>
+				</div>
+			</details>
+		</aside>
+
+		<main class="dashboard-main">
+			<header class="dashboard-header">
+				<div>
+					<p class="eyebrow">LifeLink workspace</p>
+					<h1>My Profile</h1>
+					<p>Manage the information connected to your LifeLink account.</p>
+				</div>
+				<div class="dashboard-user" aria-label="Current donor">
+					<span class="dashboard-avatar" aria-hidden="true">?</span>
+					<span>Loading...</span>
+				</div>
+			</header>
+
+			<section class="dashboard-card profile-header-card" aria-labelledby="profile-name">
+				<div class="profile-identity">
+					<div class="profile-avatar" aria-hidden="true">?</div>
+					<div>
+						<h2 id="profile-name">Loading...</h2>
+						<div class="profile-badges" aria-label="Profile details">
+							<span class="status-badge status-neutral" id="profile-role">Loading...</span>
+							<span class="status-badge status-neutral" id="profile-blood-group">Loading...</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<div class="profile-content-grid">
+				<section class="dashboard-card" aria-labelledby="personal-information-heading">
+					<div class="section-title-row">
+						<div>
+							<p class="eyebrow">Your details</p>
+							<h2 id="personal-information-heading">Personal Information</h2>
+						</div>
+					</div>
+
+					<form class="profile-form" id="profile-form">
+						<div class="profile-fields-grid">
+							<div class="form-group">
+								<label for="profile-full-name">Full name</label>
+								<input class="input" id="profile-full-name" name="fullName" type="text" placeholder="Loading..." autocomplete="name">
+							</div>
+							<div class="form-group">
+								<label for="profile-email">Email address</label>
+								<input class="input" id="profile-email" name="email" type="email" placeholder="Loading..." autocomplete="email">
+							</div>
+							<div class="form-group">
+								<label for="profile-phone">Phone number</label>
+								<input class="input" id="profile-phone" name="phone" type="tel" placeholder="Loading..." autocomplete="tel">
+							</div>
+							<div class="form-group">
+								<label for="profile-location">City / Location</label>
+								<input class="input" id="profile-location" name="location" type="text" placeholder="Loading..." autocomplete="address-level2">
+							</div>
+							<div class="form-group">
+								<label for="profile-blood-group-input">Blood group</label>
+								<select class="select" id="profile-blood-group-input" name="bloodGroup">
+									<option value="">Loading...</option>
+									<option value="A+">A+</option>
+									<option value="A-">A-</option>
+									<option value="B+">B+</option>
+									<option value="B-">B-</option>
+									<option value="AB+">AB+</option>
+									<option value="AB-">AB-</option>
+									<option value="O+">O+</option>
+									<option value="O-">O-</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="profile-availability">Donation availability</label>
+								<select class="select" id="profile-availability" name="availability">
+									<option value="">Loading...</option>
+									<option value="available">Available</option>
+									<option value="usually-available">Usually available</option>
+									<option value="currently-unavailable">Currently unavailable</option>
+								</select>
+							</div>
+						</div>
+						<div class="profile-form-footer">
+							<button class="button button-primary" id="save-profile" type="button">Save Changes</button>
+							<p id="profile-status" class="profile-status" role="status" aria-live="polite"></p>
+						</div>
+					</form>
+				</section>
+
+				<aside class="dashboard-card account-information-card" aria-labelledby="account-information-heading">
+					<p class="eyebrow">Account details</p>
+					<h2 id="account-information-heading">Account Information</h2>
+					<dl class="account-details-list">
+						<div>
+							<dt>Account role</dt>
+							<dd id="account-role">Loading...</dd>
+						</div>
+						<div>
+							<dt>Member since</dt>
+							<dd id="member-since">Loading...</dd>
+						</div>
+					</dl>
+				</aside>
+			</div>
+		</main>
+	</div>
+
+	<script src="../js/app.js" defer></script>
+<script type="module" src="../js/donor.js"></script>
+</body>
+</html>

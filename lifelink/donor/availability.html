@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Your Availability | LifeLink</title>
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body class="dashboard-page availability-page">
+	<div class="dashboard-shell">
+		<aside class="dashboard-sidebar" aria-label="Donor dashboard navigation">
+			<details class="sidebar-menu" open>
+				<summary class="sidebar-toggle" aria-label="Toggle dashboard navigation">
+					<span class="sidebar-toggle-icon" aria-hidden="true">☰</span>
+					<span>Menu</span>
+				</summary>
+
+				<div class="sidebar-inner">
+					<a class="brand dashboard-brand" href="../index.html" aria-label="LifeLink home">
+						<span class="brand-mark" aria-hidden="true">+</span>
+						<span>LifeLink</span>
+					</a>
+
+					<nav class="sidebar-nav" aria-label="Donor dashboard pages">
+						<p class="sidebar-label">Workspace</p>
+						<a class="sidebar-link" href="dashboard.html">
+							<span class="sidebar-link-mark" aria-hidden="true">01</span>
+							<span>Dashboard</span>
+						</a>
+						<a class="sidebar-link" href="profile.html">
+							<span class="sidebar-link-mark" aria-hidden="true">02</span>
+							<span>Profile</span>
+						</a>
+						<a class="sidebar-link is-active" href="availability.html" aria-current="page">
+							<span class="sidebar-link-mark" aria-hidden="true">03</span>
+							<span>Availability</span>
+						</a>
+						<a class="sidebar-link" href="requests.html">
+							<span class="sidebar-link-mark" aria-hidden="true">04</span>
+							<span>Blood Requests</span>
+						</a>
+						<a class="sidebar-link" href="history.html">
+							<span class="sidebar-link-mark" aria-hidden="true">05</span>
+							<span>Donation History</span>
+						</a>
+					</nav>
+
+					<button class="sidebar-logout" id="logout-button" type="button">
+						<span aria-hidden="true">↪</span>
+						<span>Logout</span>
+					</button>
+				</div>
+			</details>
+		</aside>
+
+		<main class="dashboard-main">
+			<header class="dashboard-header">
+				<div>
+					<p class="eyebrow">LifeLink workspace</p>
+					<h1>Your Availability</h1>
+					<p>Let people know when you are available to donate blood.</p>
+				</div>
+				<div class="dashboard-user" aria-label="Current donor">
+					<span class="dashboard-avatar" aria-hidden="true">?</span>
+					<span>Loading...</span>
+				</div>
+			</header>
+
+			<div class="availability-content-grid">
+				<div class="availability-main-column">
+					<section class="dashboard-card current-availability-card" aria-labelledby="current-availability-heading">
+						<div class="card-heading-row">
+							<div>
+								<p class="eyebrow">Your status</p>
+								<h2 id="current-availability-heading">Current availability</h2>
+							</div>
+							<span class="card-mark" aria-hidden="true">+</span>
+						</div>
+						<div class="availability-status-summary">
+							<span class="status-label">Current status</span>
+							<span class="status-badge status-neutral" id="current-availability">Loading...</span>
+						</div>
+						<p class="availability-updated">Last updated: <span id="availability-updated">Loading...</span></p>
+					</section>
+
+					<section class="dashboard-card availability-options-card" aria-labelledby="availability-options-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Choose a status</p>
+								<h2 id="availability-options-heading">Availability options</h2>
+							</div>
+						</div>
+
+						<fieldset class="availability-options">
+							<legend class="sr-only">Select your donation availability</legend>
+							<label class="availability-option" for="availability-available">
+								<input id="availability-available" name="availability" type="radio" value="available">
+								<span class="availability-option-content">
+									<strong>Available</strong>
+									<span>Ready to respond to blood donation requests.</span>
+								</span>
+								<span class="availability-option-indicator" aria-hidden="true"></span>
+							</label>
+							<label class="availability-option" for="availability-usually">
+								<input id="availability-usually" name="availability" type="radio" value="usually-available">
+								<span class="availability-option-content">
+									<strong>Usually available</strong>
+									<span>Generally available, but may need confirmation.</span>
+								</span>
+								<span class="availability-option-indicator" aria-hidden="true"></span>
+							</label>
+							<label class="availability-option" for="availability-unavailable">
+								<input id="availability-unavailable" name="availability" type="radio" value="currently-unavailable">
+								<span class="availability-option-content">
+									<strong>Currently unavailable</strong>
+									<span>Not available to donate right now.</span>
+								</span>
+								<span class="availability-option-indicator" aria-hidden="true"></span>
+							</label>
+						</fieldset>
+					</section>
+
+					<section class="dashboard-card availability-location-card" aria-labelledby="availability-location-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Help organizers coordinate</p>
+								<h2 id="availability-location-heading">Donation location</h2>
+							</div>
+						</div>
+						<div class="form-group availability-location-field">
+							<label for="availability-location">City / Location</label>
+							<input class="input" id="availability-location" name="location" type="text" placeholder="Loading..." autocomplete="address-level2">
+							<p>This helps organizers find suitable donors nearby.</p>
+						</div>
+					</section>
+
+					<div class="availability-save-row">
+						<button class="button button-primary" id="save-availability" type="button">Save Availability</button>
+						<p id="availability-status" class="auth-status" role="status" aria-live="polite"></p>
+					</div>
+				</div>
+
+				<aside class="dashboard-card availability-info-card" aria-labelledby="availability-info-heading">
+					<span class="info-card-mark" aria-hidden="true">i</span>
+					<p class="eyebrow">Keep it current</p>
+					<h2 id="availability-info-heading">When should you update this?</h2>
+					<p>Update your availability whenever your ability to donate changes. Keeping this information current helps organizers coordinate requests more effectively.</p>
+				</aside>
+			</div>
+		</main>
+	</div>
+
+	<script src="../js/app.js" defer></script>
+<script type="module" src="../js/donor.js"></script>
+</body>
+</html>
