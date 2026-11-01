@@ -2,12 +2,16 @@ import { auth, db } from "./firebase.js";
 
 import {
     onAuthStateChanged,
-    signOut
+    updateEmail
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 import {
     doc,
     getDoc,
+    getDocs,
+    collection,
+    setDoc,
+    deleteDoc,
     updateDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -41,8 +45,16 @@ onAuthStateChanged(auth, async (user) => {
 
         userData = snapshot.data();
 
+        if (userData.role !== "donor") {
+            window.location.href = userData.role === "organizer"
+                ? "../organizer/dashboard.html"
+                : "../admin/dashboard.html";
+            return;
+        }
+
         loadDashboard();
         loadProfile();
+        loadDonorPageData();
 
     } catch (error) {
         console.error("Failed to load user data:", error);
@@ -171,6 +183,10 @@ function attachProfileSaveHandler() {
                 return;
             }
 
+            if (email !== currentUser.email) {
+                await updateEmail(currentUser, email);
+            }
+
             await updateDoc(
                 doc(db, "users", currentUser.uid),
                 {
@@ -222,28 +238,6 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", attachProfileSaveHandler);
 } else {
     attachProfileSaveHandler();
-}
-
-
-// ============================================================
-// LOGOUT
-// ============================================================
-
-const logoutButton =
-    document.getElementById("logout-button");
-
-if (logoutButton) {
-
-    logoutButton.addEventListener("click", async () => {
-
-        try {
-            await signOut(auth);
-            window.location.href = "../login.html";
-
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    });
 }
 
 
@@ -654,4 +648,118 @@ function updateDonorIdentity(fullName) {
             avatarElement.textContent = initials.toUpperCase();
         }
     );
+}
+
+async function loadDonorPageData() {
+    if (!currentUser) return;
+
+    try {
+        if (document.getElementById("active-requests") || document.getElementById("donor-request-list")) {
+            const requestsSnapshot = await getDocs(collection(db, "bloodRequests"));
+            const requests = requestsSnapshot.docs
+                .map((item) => ({ id: item.id, ...item.data() }))
+                .filter((request) => request.status !== "completed" && request.status !== "cancelled")
+                .filter((request) => !request.bloodGroup || request.bloodGroup === userData.bloodGroup);
+            const requestsWithResponses = await Promise.all(requests.map(async (request) => {
+                const response = await getDoc(doc(db, "bloodRequests", request.id, "responses", currentUser.uid));
+                return { ...request, response: response.exists() ? response.data() : null };
+            }));
+            renderDonorRequests(requestsWithResponses);
+        }
+
+        if (document.getElementById("donation-history")) {
+            const historySnapshot = await getDocs(collection(db, "donations"));
+            const history = historySnapshot.docs
+                .map((item) => ({ id: item.id, ...item.data() }))
+                .filter((item) => item.donorId === currentUser.uid)
+                .sort((a, b) => formatUpdatedTime(b.donatedAt || b.createdAt).localeCompare(formatUpdatedTime(a.donatedAt || a.createdAt)));
+            renderDonationHistory(history);
+        }
+    } catch (error) {
+        console.error("Failed to load donor data:", error);
+        showProfileStatus("Some donor activity could not be loaded.");
+    }
+}
+
+function renderDonorRequests(requests) {
+    const container = document.getElementById("donor-request-list") || document.getElementById("active-requests");
+    if (!container) return;
+    ensureDonorRequestFilters(container);
+    const location = document.getElementById("donor-request-location")?.value.toLowerCase() || "";
+    const urgency = document.getElementById("donor-request-urgency")?.value || "";
+    const status = document.getElementById("donor-request-status")?.value || "";
+    const filteredRequests = requests.filter((request) => (!location || String(request.location || "").toLowerCase().includes(location)) && (!urgency || request.urgency === urgency) && (!status || (status === "responded" ? request.response : request.status === status)));
+    container.innerHTML = "";
+
+    if (!filteredRequests.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-state-mark" aria-hidden="true">+</span><h3>No matching blood requests.</h3><p>New requests for your blood group will appear here.</p></div>`;
+        return;
+    }
+
+    filteredRequests.slice(0, document.getElementById("donor-request-list") ? filteredRequests.length : 3).forEach((request) => {
+        const card = document.createElement("article");
+        card.className = "request-card";
+        const responseAction = request.response
+            ? `<button class="button button-outline" type="button" data-action="withdraw">Withdraw response</button><span class="status-badge status-neutral">Response: ${escapeHtml(request.response.status || "interested")}</span>`
+            : `<button class="button button-primary" type="button" data-action="respond">I can help</button>`;
+        card.innerHTML = `<div class="request-card-header"><div><h3>${escapeHtml(request.hospital || "Blood request")}</h3><p class="request-card-subtitle">${escapeHtml(request.location || "Location not provided")}</p></div><div class="request-card-badges"><span class="status-badge status-neutral">${escapeHtml(request.bloodGroup || "Any group")}</span><span class="status-badge status-neutral">${escapeHtml(request.urgency || "Standard")}</span></div></div><div class="request-card-details"><div class="request-detail"><span class="request-detail-label">Units required</span><span class="request-detail-value">${request.unitsRequired || "-"}</span></div><div class="request-detail"><span class="request-detail-label">Required date</span><span class="request-detail-value">${escapeHtml(request.requiredDate || "-" )}</span></div><div class="request-detail"><span class="request-detail-label">Request status</span><span class="request-detail-value">${escapeHtml(request.status || "open")}</span></div></div><div class="request-card-footer"><p class="request-card-meta">${escapeHtml(request.notes || "Please respond if you can help.")}</p>${responseAction}</div>`;
+        const action = card.querySelector("[data-action]");
+        action.addEventListener("click", () => request.response ? withdrawFromRequest(request.id, card) : respondToRequest(request.id, card));
+        container.appendChild(card);
+    });
+}
+
+async function respondToRequest(requestId, card) {
+    const button = card.querySelector("button");
+    button.disabled = true;
+    button.textContent = "Saving...";
+    try {
+        await setDoc(doc(db, "bloodRequests", requestId, "responses", currentUser.uid), {
+            donorId: currentUser.uid,
+            donorName: userData.fullName || "Donor",
+            bloodGroup: userData.bloodGroup || "",
+            status: "interested",
+            createdAt: serverTimestamp()
+        }, { merge: true });
+        button.textContent = "Response sent";
+    } catch (error) {
+        console.error("Request response failed:", error);
+        button.disabled = false;
+        button.textContent = "Try again";
+    }
+}
+
+async function withdrawFromRequest(requestId, card) {
+    const button = card.querySelector("button");
+    button.disabled = true;
+    button.textContent = "Removing...";
+    try {
+        await deleteDoc(doc(db, "bloodRequests", requestId, "responses", currentUser.uid));
+        await loadDonorPageData();
+    } catch (error) {
+        console.error("Response withdrawal failed:", error);
+        button.disabled = false;
+        button.textContent = "Try again";
+    }
+}
+
+function renderDonationHistory(history) {
+    const container = document.getElementById("donation-history");
+    if (!container) return;
+    if (!history.length) return;
+    container.innerHTML = history.slice(0, 5).map((item) => `<div class="request-detail"><span class="request-detail-label">${escapeHtml(item.hospital || "Donation")}</span><span class="request-detail-value">${escapeHtml(item.donatedAt || item.date || "Completed")}</span></div>`).join("");
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
+}
+
+function ensureDonorRequestFilters(container) {
+    if (document.getElementById("donor-request-filters")) return;
+    const toolbar = document.createElement("div");
+    toolbar.id = "donor-request-filters";
+    toolbar.className = "request-toolbar";
+    toolbar.innerHTML = `<div class="form-group"><label for="donor-request-location">Location</label><input class="input" id="donor-request-location" type="search" placeholder="City or area"></div><div class="form-group"><label for="donor-request-urgency">Urgency</label><select class="select" id="donor-request-urgency"><option value="">All urgency levels</option><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="critical">Critical</option></select></div><div class="form-group"><label for="donor-request-status">Response</label><select class="select" id="donor-request-status"><option value="">All requests</option><option value="responded">My responses</option><option value="open">Open</option><option value="in-progress">In progress</option></select></div>`;
+    container.before(toolbar);
+    toolbar.querySelectorAll("input, select").forEach((control) => control.addEventListener("input", loadDonorPageData));
 }

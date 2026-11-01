@@ -60,6 +60,8 @@ function validateRegisterForm() {
     const bloodGroup = getValue("blood-group");
     const location = getValue("location");
     const availability = getValue("availability");
+    const organizationName = getValue("organization-name");
+    const contactPerson = getValue("contact-person");
 
     const role =
         document.querySelector('input[name="role"]:checked')?.value || "";
@@ -97,7 +99,7 @@ function validateRegisterForm() {
         valid = false;
     }
 
-    if (!bloodGroup) {
+    if (role === "donor" && !bloodGroup) {
         showFieldError(
             "blood-group",
             "Please select your blood group."
@@ -113,7 +115,7 @@ function validateRegisterForm() {
         valid = false;
     }
 
-    if (!availability) {
+    if (role === "donor" && !availability) {
         showFieldError(
             "availability",
             "Please select your availability."
@@ -129,6 +131,16 @@ function validateRegisterForm() {
         valid = false;
     }
 
+    if (role === "organizer" && !organizationName) {
+        showFieldError("organization-name", "Please enter your organization name.");
+        valid = false;
+    }
+
+    if (role === "organizer" && !contactPerson) {
+        showFieldError("contact-person", "Please enter a contact person.");
+        valid = false;
+    }
+
     return {
         valid,
         data: {
@@ -139,6 +151,8 @@ function validateRegisterForm() {
             bloodGroup,
             location,
             availability,
+            organizationName,
+            contactPerson,
             role
         }
     };
@@ -174,6 +188,8 @@ if (registerForm) {
                 bloodGroup,
                 location,
                 availability,
+                organizationName,
+                contactPerson,
                 role
             } = result.data;
 
@@ -195,7 +211,9 @@ if (registerForm) {
                     phone,
                     bloodGroup,
                     location,
-                    availability,
+                    availability: role === "donor" ? availability : "currently-unavailable",
+                    organizationName: role === "organizer" ? organizationName : "",
+                    contactPerson: role === "organizer" ? contactPerson : "",
                     role,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()

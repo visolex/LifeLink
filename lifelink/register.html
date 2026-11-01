@@ -24,7 +24,7 @@
 			</div>
 
 			<form class="auth-form register-form" id="register-form" novalidate>
-				<fieldset class="register-fieldset">
+				<fieldset class="register-fieldset" id="donor-fields">
 					<legend>Account details</legend>
 					<div class="register-fields-grid">
 						<div class="form-group">
@@ -61,6 +61,22 @@
 								<button class="password-toggle" type="button" aria-controls="confirm-password" aria-label="Show password" aria-pressed="false">Show</button>
 							</div>
 							<p class="field-error" id="confirm-password-error" data-error-for="confirm-password" role="alert"></p>
+						</div>
+					</div>
+				</fieldset>
+
+				<fieldset class="register-fieldset" id="organizer-fields" hidden>
+					<legend>Organization details</legend>
+					<div class="register-fields-grid">
+						<div class="form-group">
+							<label for="organization-name">Organization name</label>
+							<input class="input" id="organization-name" name="organizationName" type="text" autocomplete="organization" aria-describedby="organization-name-error">
+							<p class="field-error" id="organization-name-error" data-error-for="organization-name" role="alert"></p>
+						</div>
+						<div class="form-group">
+							<label for="contact-person">Contact person</label>
+							<input class="input" id="contact-person" name="contactPerson" type="text" autocomplete="name" aria-describedby="contact-person-error">
+							<p class="field-error" id="contact-person-error" data-error-for="contact-person" role="alert"></p>
 						</div>
 					</div>
 				</fieldset>

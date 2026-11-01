@@ -257,64 +257,6 @@
 		</main>
 	</div>
 
-	<script>
-		document.addEventListener('DOMContentLoaded', () => {
-			const requestForm = document.getElementById('request-form');
-			const requestStatus = document.getElementById('request-status');
-			const requiredFields = [
-				['request-blood-group', 'Select a blood group.'],
-				['units-required', 'Enter at least 1 unit.'],
-				['request-urgency', 'Select an urgency.'],
-				['required-date', 'Select a required date.'],
-				['request-hospital', 'Enter a hospital or medical center.'],
-				['request-location', 'Enter a location.'],
-				['organization-name', 'Enter an organization name.'],
-				['contact-person', 'Enter a contact person.'],
-				['contact-phone', 'Enter a contact phone number.']
-			];
-
-			const clearErrors = () => {
-				requestForm.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
-				requestForm.querySelectorAll('.input-error').forEach((field) => field.classList.remove('input-error'));
-				requestForm.querySelectorAll('.field-error').forEach((message) => { message.textContent = ''; });
-			};
-
-			requestForm.addEventListener('submit', (event) => {
-				event.preventDefault();
-				clearErrors();
-				requestStatus.textContent = '';
-				let firstInvalidField = null;
-
-				requiredFields.forEach(([fieldId, message]) => {
-					const field = document.getElementById(fieldId);
-					const error = document.getElementById(`${fieldId}-error`);
-					const isEmpty = !field.value.trim();
-					const hasInvalidUnits = fieldId === 'units-required' && Number(field.value) < 1;
-
-					if (isEmpty || hasInvalidUnits) {
-						field.classList.add('input-error');
-						field.setAttribute('aria-invalid', 'true');
-						error.textContent = message;
-						firstInvalidField = firstInvalidField || field;
-					}
-				});
-
-				if (firstInvalidField) {
-					firstInvalidField.focus();
-					return;
-				}
-
-				requestStatus.textContent = 'Request form ready. Firebase will be connected next.';
-			});
-
-			requestForm.addEventListener('reset', () => {
-				window.setTimeout(() => {
-					clearErrors();
-					requestStatus.textContent = '';
-				}, 0);
-			});
-		});
-	</script>
 	<script src="../js/app.js" defer></script>
 <script type="module" src="../js/organizer.js"></script>
 </body>
