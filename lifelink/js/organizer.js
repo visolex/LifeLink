@@ -10,7 +10,10 @@ import {
     addDoc,
     collection,
     getDocs,
+    query,
+    where,
     updateDoc,
+    setDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -60,13 +63,9 @@ onAuthStateChanged(auth, async (user) => {
         organizerData = userSnap.data();
 
         if (organizerData.role !== "organizer") {
-            showStatus(
-                "Only organizer accounts can create blood requests."
-            );
-
-            if (submitButton) {
-                submitButton.disabled = true;
-            }
+            window.location.href = organizerData.role === "donor"
+                ? "../donor/dashboard.html"
+                : "../admin/dashboard.html";
             return;
         }
 
@@ -325,9 +324,9 @@ if (form) {
 
             showStatus(message);
 
+        } finally {
             submitButton.disabled = false;
-            submitButton.textContent =
-                "Create Blood Request";
+            submitButton.textContent = "Create Blood Request";
         }
     });
 }
@@ -340,17 +339,24 @@ async function loadOrganizerData() {
             .map((item) => ({ id: item.id, ...item.data() }))
             .filter((request) => request.organizerId === currentUser.uid)
             .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-        const donorsSnapshot = await getDocs(collection(db, "users"));
-        const donors = donorsSnapshot.docs.map((item) => item.data()).filter((item) => item.role === "donor" && item.availability !== "currently-unavailable");
+        const requestsWithResponses = await Promise.all(requests.map(async (request) => {
+            const responseSnapshot = await getDocs(collection(db, "bloodRequests", request.id, "responses"));
+            return {
+                ...request,
+                responses: responseSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+            };
+        }));
+        const donorsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "donor")));
+        const donors = donorsSnapshot.docs.map((item) => item.data()).filter((item) => item.availability !== "currently-unavailable");
         renderDonors(donors);
-        setOrganizerText("active-request-count", requests.filter((item) => item.status === "open" || item.status === "in-progress").length);
-        setOrganizerText("urgent-request-count", requests.filter((item) => item.urgency === "urgent" && item.status !== "completed" && item.status !== "cancelled").length);
-        setOrganizerText("completed-request-count", requests.filter((item) => item.status === "completed").length);
-        setOrganizerText("total-request-count", requests.length);
+        setOrganizerText("active-request-count", requestsWithResponses.filter((item) => item.status === "open" || item.status === "in-progress").length);
+        setOrganizerText("urgent-request-count", requestsWithResponses.filter((item) => item.urgency === "urgent" && item.status !== "completed" && item.status !== "cancelled").length);
+        setOrganizerText("completed-request-count", requestsWithResponses.filter((item) => item.status === "completed").length);
+        setOrganizerText("total-request-count", requestsWithResponses.length);
         setOrganizerText("available-donor-count", donors.length);
-        renderOrganizerDashboard(requests);
-        renderOrganizerRequests(requests);
-        renderOrganizerReport(requests);
+        renderOrganizerDashboard(requestsWithResponses);
+        renderOrganizerRequests(requestsWithResponses);
+        renderOrganizerReport(requestsWithResponses);
     } catch (error) {
         console.error("Failed to load organizer data:", error);
         showStatus("Unable to load organizer data.");
@@ -358,15 +364,28 @@ async function loadOrganizerData() {
 }
 
 function renderOrganizerReport(requests) {
-    if (document.getElementById("organizer-report") || !document.getElementById("total-request-count")) return;
-    const report = document.createElement("section");
-    report.id = "organizer-report";
-    report.className = "dashboard-card organizer-section";
-    const byGroup = countValues(requests, "bloodGroup");
-    const byUrgency = countValues(requests, "urgency");
-    const byStatus = countValues(requests, "status");
-    report.innerHTML = `<div class="section-title-row"><div><p class="eyebrow">Live breakdown</p><h2>Request reports</h2></div></div><div class="request-details-grid"><div class="request-detail"><span class="request-detail-label">By blood group</span><span class="request-detail-value">${formatCounts(byGroup)}</span></div><div class="request-detail"><span class="request-detail-label">By urgency</span><span class="request-detail-value">${formatCounts(byUrgency)}</span></div><div class="request-detail"><span class="request-detail-label">By status</span><span class="request-detail-value">${formatCounts(byStatus)}</span></div></div>`;
-    document.querySelector(".dashboard-main")?.appendChild(report);
+    if (!document.getElementById("total-request-count")) return;
+    let report = document.getElementById("organizer-report");
+    if (!report) {
+        report = document.createElement("section");
+        report.id = "organizer-report";
+        report.className = "dashboard-card organizer-section";
+        document.querySelector(".dashboard-main")?.appendChild(report);
+    }
+    const status = document.getElementById("organizer-report-status")?.value || "";
+    const group = document.getElementById("organizer-report-group")?.value || "";
+    const from = document.getElementById("organizer-report-from")?.value || "";
+    const to = document.getElementById("organizer-report-to")?.value || "";
+    const filtered = requests.filter((request) => (!status || request.status === status) && (!group || request.bloodGroup === group) && (!from || String(request.requiredDate || "") >= from) && (!to || String(request.requiredDate || "") <= to));
+    const byGroup = countValues(filtered, "bloodGroup");
+    const byUrgency = countValues(filtered, "urgency");
+    const byStatus = countValues(filtered, "status");
+    report.innerHTML = `<div class="section-title-row"><div><p class="eyebrow">Live breakdown</p><h2>Request reports</h2></div></div><div class="request-toolbar"><div class="form-group"><label for="organizer-report-status">Status</label><select class="select" id="organizer-report-status"><option value="">All statuses</option><option value="open">Open</option><option value="in-progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="form-group"><label for="organizer-report-group">Blood group</label><select class="select" id="organizer-report-group"><option value="">All groups</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div><div class="form-group"><label for="organizer-report-from">From</label><input class="input" id="organizer-report-from" type="date"></div><div class="form-group"><label for="organizer-report-to">To</label><input class="input" id="organizer-report-to" type="date"></div></div><div class="request-details-grid"><div class="request-detail"><span class="request-detail-label">Matching requests</span><span class="request-detail-value">${filtered.length}</span></div><div class="request-detail"><span class="request-detail-label">By blood group</span><span class="request-detail-value">${formatCounts(byGroup)}</span></div><div class="request-detail"><span class="request-detail-label">By urgency</span><span class="request-detail-value">${formatCounts(byUrgency)}</span></div><div class="request-detail"><span class="request-detail-label">By status</span><span class="request-detail-value">${formatCounts(byStatus)}</span></div></div>`;
+    report.querySelectorAll("select, input").forEach((control) => {
+        control.value = control.id === "organizer-report-status" ? status : control.id === "organizer-report-group" ? group : control.id === "organizer-report-from" ? from : to;
+        control.addEventListener("input", () => renderOrganizerReport(requests));
+        control.addEventListener("change", () => renderOrganizerReport(requests));
+    });
 }
 
 function countValues(items, field) {
@@ -385,7 +404,7 @@ function renderDonors(donors) {
     const location = document.getElementById("donor-location-filter")?.value.toLowerCase() || "";
     const availability = document.getElementById("donor-availability-filter")?.value || "";
     const filtered = donors.filter((item) => (!blood || item.bloodGroup === blood) && (!location || String(item.location || "").toLowerCase().includes(location)) && (!availability || item.availability === availability));
-    container.innerHTML = filtered.length ? filtered.map((item) => `<article class="request-card"><div class="request-card-header"><div><h3>${escapeOrganizer(item.fullName || "Donor")}</h3><p class="request-card-subtitle">${escapeOrganizer(item.location || "Location not provided")}</p></div><span class="status-badge status-neutral">${escapeOrganizer(item.bloodGroup || "-")}</span></div><div class="request-card-details"><div class="request-detail"><span class="request-detail-label">Availability</span><span class="request-detail-value">${escapeOrganizer(item.availability || "-")}</span></div><div class="request-detail"><span class="request-detail-label">Contact</span><span class="request-detail-value">${escapeOrganizer(item.phone || "Not provided")}</span></div></div></article>`).join("") : `<div class="empty-state"><h3>No matching donors.</h3><p>Try adjusting the filters.</p></div>`;
+    container.innerHTML = filtered.length ? filtered.map((item) => `<article class="request-card"><div class="request-card-header"><div><h3>${escapeOrganizer(item.fullName || "Donor")}</h3><p class="request-card-subtitle">${escapeOrganizer(item.location || "Location not provided")}</p></div><span class="status-badge status-neutral">${escapeOrganizer(item.bloodGroup || "-")}</span></div><div class="request-card-details"><div class="request-detail"><span class="request-detail-label">Availability</span><span class="request-detail-value">${escapeOrganizer(item.availability || "-")}</span></div><div class="request-detail"><span class="request-detail-label">Contact</span><span class="request-detail-value">Available through LifeLink coordination</span></div></div></article>`).join("") : `<div class="empty-state"><h3>No matching donors.</h3><p>Try adjusting the filters.</p></div>`;
 }
 
 function updateOrganizerIdentity(fullName) {
@@ -441,6 +460,18 @@ function renderOrganizerRequests(requests) {
         select.value = request.status || "open";
         select.addEventListener("change", () => updateRequestStatus(request.id, select.value));
         card.querySelector('[data-action="view-details"]').addEventListener("click", () => showRequestDetails(request));
+        const editButton = document.createElement("button");
+        editButton.className = "button button-outline";
+        editButton.type = "button";
+        editButton.textContent = "Edit";
+        editButton.addEventListener("click", () => showEditRequest(request));
+        card.querySelector(".request-card-actions")?.appendChild(editButton);
+        const responseButton = document.createElement("button");
+        responseButton.className = "button button-outline";
+        responseButton.type = "button";
+        responseButton.textContent = `Donor responses (${request.responses?.length || 0})`;
+        responseButton.addEventListener("click", () => showRequestResponses(request));
+        card.querySelector(".request-card-actions")?.appendChild(responseButton);
         container.appendChild(card);
     });
 }
@@ -449,9 +480,11 @@ async function updateRequestStatus(requestId, statusValue) {
     try {
         await updateDoc(doc(db, "bloodRequests", requestId), { status: statusValue, updatedAt: serverTimestamp() });
         await loadOrganizerData();
+        return true;
     } catch (error) {
         console.error("Request status update failed:", error);
         showStatus("Unable to update request status.");
+        return false;
     }
 }
 
@@ -462,12 +495,104 @@ function showRequestDetails(request) {
         const element = modal.querySelector(`[data-modal-field="${key}"]`);
         if (element) element.textContent = value?.toDate ? value.toDate().toLocaleDateString("en-IN") : value || "-";
     });
+    let statusSelect = modal.querySelector("[data-modal-action='status']");
+    if (!statusSelect) {
+        statusSelect = document.createElement("select");
+        statusSelect.className = "select";
+        statusSelect.dataset.modalAction = "status";
+        statusSelect.innerHTML = "<option value='open'>Open</option><option value='in-progress'>In progress</option><option value='completed'>Completed</option><option value='cancelled'>Cancelled</option>";
+        modal.querySelector(".modal-actions")?.prepend(statusSelect);
+    }
+    statusSelect.value = request.status || "open";
+    const updateButton = modal.querySelector(".modal-actions .button-primary");
+    if (updateButton) updateButton.onclick = async () => {
+        updateButton.disabled = true;
+        updateButton.textContent = "Updating...";
+        const updated = await updateRequestStatus(request.id, statusSelect.value);
+        if (updated) modal.hidden = true;
+        updateButton.disabled = false;
+        updateButton.textContent = "Update Status";
+    };
     modal.hidden = false;
     modal.querySelectorAll(".modal-close, .modal-actions .button-outline").forEach((button) => button.onclick = () => { modal.hidden = true; });
+}
+
+function showEditRequest(request) {
+    const modal = document.getElementById("request-details-modal");
+    if (!modal) return;
+    const heading = modal.querySelector("#request-details-heading");
+    const grid = modal.querySelector(".request-details-grid");
+    if (heading) heading.textContent = "Edit blood request";
+    if (grid) grid.innerHTML = `<div class="form-group"><label for="edit-hospital">Hospital</label><input class="input" id="edit-hospital" value="${escapeOrganizer(request.hospital)}"></div><div class="form-group"><label for="edit-location">Location</label><input class="input" id="edit-location" value="${escapeOrganizer(request.location)}"></div><div class="form-group"><label for="edit-units">Units</label><input class="input" id="edit-units" type="number" min="1" value="${request.unitsRequired || 1}"></div><div class="form-group"><label for="edit-urgency">Urgency</label><select class="select" id="edit-urgency"><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="critical">Critical</option></select></div><div class="form-group request-details-notes"><label for="edit-notes">Notes</label><textarea class="textarea" id="edit-notes">${escapeOrganizer(request.notes)}</textarea></div>`;
+    const urgency = modal.querySelector("#edit-urgency");
+    if (urgency) urgency.value = request.urgency || "normal";
+    const primary = modal.querySelector(".modal-actions .button-primary");
+    if (primary) primary.onclick = async () => {
+        const units = Number(modal.querySelector("#edit-units")?.value);
+        if (!modal.querySelector("#edit-hospital")?.value.trim() || !modal.querySelector("#edit-location")?.value.trim() || !Number.isInteger(units) || units < 1) return;
+        primary.disabled = true;
+        primary.textContent = "Saving...";
+        try {
+            await updateDoc(doc(db, "bloodRequests", request.id), { hospital: modal.querySelector("#edit-hospital").value.trim(), location: modal.querySelector("#edit-location").value.trim(), unitsRequired: units, urgency: urgency.value, notes: modal.querySelector("#edit-notes").value.trim(), updatedAt: serverTimestamp() });
+            modal.hidden = true;
+            await loadOrganizerData();
+        } catch (error) {
+            console.error("Request edit failed:", error);
+            showStatus("Unable to save request changes.");
+        } finally {
+            primary.disabled = false;
+            primary.textContent = "Update Status";
+        }
+    };
+    modal.querySelectorAll(".modal-close, .modal-actions .button-outline").forEach((button) => button.onclick = () => { modal.hidden = true; });
+    modal.hidden = false;
+}
+
+function showRequestResponses(request) {
+    const modal = document.getElementById("request-details-modal");
+    if (!modal) return;
+    const heading = modal.querySelector("#request-details-heading");
+    const grid = modal.querySelector(".request-details-grid");
+    if (heading) heading.textContent = "Donor responses";
+    if (grid) grid.innerHTML = request.responses?.length
+        ? request.responses.map((response) => `<div class="request-detail"><span class="request-detail-label">${escapeOrganizer(response.donorName || "Donor")}</span><span class="request-detail-value">${escapeOrganizer(response.bloodGroup || "-")} · ${escapeOrganizer(response.status || "interested")} <button class="button button-outline" type="button" data-donation-response="${escapeOrganizer(response.id)}">Mark donated</button></span></div>`).join("")
+        : "<p class='empty-state'>No donors have responded yet.</p>";
+    modal.hidden = false;
+    modal.querySelectorAll(".modal-close, .modal-actions button").forEach((button) => button.onclick = () => { modal.hidden = true; });
+    modal.querySelectorAll("[data-donation-response]").forEach((button) => button.addEventListener("click", () => recordDonation(request, button.dataset.donationResponse, button)));
+}
+
+async function recordDonation(request, donorId, button) {
+    button.disabled = true;
+    button.textContent = "Saving...";
+    try {
+        await setDoc(doc(db, "bloodRequests", request.id, "responses", donorId), {
+            status: "donated",
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        await setDoc(doc(db, "donations", `${request.id}_${donorId}`), {
+            donorId,
+            requestId: request.id,
+            hospital: request.hospital || "",
+            location: request.location || "",
+            bloodGroup: request.bloodGroup || "",
+            donatedAt: serverTimestamp(),
+            status: "completed",
+            recordedBy: currentUser.uid
+        }, { merge: true });
+        button.textContent = "Donation recorded";
+    } catch (error) {
+        console.error("Donation record failed:", error);
+        button.disabled = false;
+        button.textContent = "Try again";
+    }
 }
 
 function escapeOrganizer(value) {
     return String(value || "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 }
 
-document.querySelectorAll("#request-search, #status-filter, #blood-group-filter, #donor-blood-filter, #donor-location-filter, #donor-availability-filter").forEach((control) => control.addEventListener("input", loadOrganizerData));
+document.querySelectorAll("#request-search, #status-filter, #blood-group-filter, #donor-blood-filter, #donor-location-filter, #donor-availability-filter").forEach((control) => {
+    control.addEventListener("input", loadOrganizerData);
+    control.addEventListener("change", loadOrganizerData);
+});

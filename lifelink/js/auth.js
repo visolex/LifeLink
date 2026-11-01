@@ -2,7 +2,9 @@ import { auth, db } from "./firebase.js";
 
 import {
     createUserWithEmailAndPassword,
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    deleteUser,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 import {
@@ -68,6 +70,9 @@ function validateRegisterForm() {
 
     let valid = true;
 
+    const emailField = document.getElementById("email");
+    const phoneDigits = phone.match(/\d/g) || [];
+
     if (!fullName) {
         showFieldError("full-name", "Please enter your full name.");
         valid = false;
@@ -76,10 +81,16 @@ function validateRegisterForm() {
     if (!email) {
         showFieldError("email", "Please enter your email address.");
         valid = false;
+    } else if (emailField && !emailField.validity.valid) {
+        showFieldError("email", "Please enter a valid email address.");
+        valid = false;
     }
 
     if (!phone) {
         showFieldError("phone", "Please enter your phone number.");
+        valid = false;
+    } else if (phoneDigits.length < 7) {
+        showFieldError("phone", "Please enter a valid phone number.");
         valid = false;
     }
 
@@ -161,6 +172,8 @@ function validateRegisterForm() {
 
 if (registerForm) {
 
+    let createdUser = null;
+
     registerForm.addEventListener("submit", async (event) => {
 
         event.preventDefault();
@@ -201,6 +214,7 @@ if (registerForm) {
                 );
 
             const user = userCredential.user;
+            createdUser = user;
 
             await setDoc(
                 doc(db, "users", user.uid),
@@ -234,6 +248,14 @@ if (registerForm) {
         } catch (error) {
 
             console.error("Registration error:", error);
+
+            if (createdUser) {
+                try {
+                    await deleteUser(createdUser);
+                } catch (cleanupError) {
+                    console.error("Registration cleanup failed:", cleanupError);
+                }
+            }
 
             let message = "Unable to create your account.";
 
@@ -422,6 +444,30 @@ if (loginForm) {
 
             submitButton.disabled = false;
             submitButton.textContent = "Sign In";
+        }
+    });
+}
+
+const forgotPasswordLink = document.getElementById("forgot-password-link");
+
+if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("email")?.value.trim();
+
+        if (!email) {
+            showLoginStatus("Enter your email address first, then choose Forgot password.");
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            showLoginStatus("Password reset instructions sent to your email.", "success");
+        } catch (error) {
+            console.error("Password reset failed:", error);
+            showLoginStatus(error.code === "auth/user-not-found"
+                ? "No account was found for that email address."
+                : "Unable to send password reset instructions.");
         }
     });
 }

@@ -10,6 +10,8 @@ import {
     getDoc,
     getDocs,
     collection,
+    query,
+    where,
     setDoc,
     deleteDoc,
     updateDoc,
@@ -665,15 +667,16 @@ async function loadDonorPageData() {
                 return { ...request, response: response.exists() ? response.data() : null };
             }));
             renderDonorRequests(requestsWithResponses);
+            ensureDonorStats(requestsWithResponses, null);
         }
 
         if (document.getElementById("donation-history")) {
-            const historySnapshot = await getDocs(collection(db, "donations"));
+            const historySnapshot = await getDocs(query(collection(db, "donations"), where("donorId", "==", currentUser.uid)));
             const history = historySnapshot.docs
                 .map((item) => ({ id: item.id, ...item.data() }))
-                .filter((item) => item.donorId === currentUser.uid)
                 .sort((a, b) => formatUpdatedTime(b.donatedAt || b.createdAt).localeCompare(formatUpdatedTime(a.donatedAt || a.createdAt)));
             renderDonationHistory(history);
+            ensureDonorStats(null, history);
         }
     } catch (error) {
         console.error("Failed to load donor data:", error);
@@ -747,7 +750,31 @@ function renderDonationHistory(history) {
     const container = document.getElementById("donation-history");
     if (!container) return;
     if (!history.length) return;
-    container.innerHTML = history.slice(0, 5).map((item) => `<div class="request-detail"><span class="request-detail-label">${escapeHtml(item.hospital || "Donation")}</span><span class="request-detail-value">${escapeHtml(item.donatedAt || item.date || "Completed")}</span></div>`).join("");
+    container.innerHTML = history.slice(0, 5).map((item) => `<div class="request-detail"><span class="request-detail-label">${escapeHtml(item.hospital || "Donation")}</span><span class="request-detail-value">${escapeHtml(formatDonationDate(item.donatedAt || item.date))}</span></div>`).join("");
+}
+
+function formatDonationDate(value) {
+    if (!value) return "Completed";
+    const date = value.toDate ? value.toDate() : new Date(value);
+    return Number.isNaN(date.getTime()) ? "Completed" : date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function ensureDonorStats(requests, history) {
+    const dashboard = document.querySelector(".dashboard-overview");
+    if (!dashboard) return;
+    let stats = document.getElementById("donor-live-stats");
+    if (!stats) {
+        stats = document.createElement("section");
+        stats.id = "donor-live-stats";
+        stats.className = "dashboard-grid donor-live-stats";
+        stats.innerHTML = `<article class="dashboard-card"><p class="eyebrow">Requests</p><h2>Available</h2><strong id="donor-available-request-count">--</strong></article><article class="dashboard-card"><p class="eyebrow">Responses</p><h2>Pending</h2><strong id="donor-pending-response-count">--</strong></article><article class="dashboard-card"><p class="eyebrow">Impact</p><h2>Donations</h2><strong id="donor-donation-count">--</strong></article>`;
+        dashboard.after(stats);
+    }
+    if (requests) {
+        setText("donor-available-request-count", requests.length);
+        setText("donor-pending-response-count", requests.filter((item) => item.response && item.response.status !== "donated").length);
+    }
+    if (history) setText("donor-donation-count", history.length);
 }
 
 function escapeHtml(value) {
