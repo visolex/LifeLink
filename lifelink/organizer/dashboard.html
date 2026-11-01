@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Organizer Dashboard | LifeLink</title>
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../css/dashboard.css">
+	<style>
+		.organizer-overview {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: var(--gap-md);
+		}
+
+		.organizer-summary-card {
+			min-height: 10rem;
+		}
+
+		.organizer-summary-value {
+			display: block;
+			margin-top: 1.75rem;
+			color: var(--color-dark-text);
+			font-size: clamp(2rem, 4vw, 2.75rem);
+			font-weight: 700;
+			letter-spacing: -0.04em;
+			line-height: 1;
+		}
+
+		.organizer-section {
+			margin-top: var(--gap-lg);
+		}
+
+		.organizer-section .empty-state {
+			margin-top: var(--gap-lg);
+		}
+
+		@media (max-width: 1100px) {
+			.organizer-overview {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+
+		@media (max-width: 620px) {
+			.organizer-overview {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body class="dashboard-page organizer-dashboard-page">
+	<div class="dashboard-shell">
+		<aside class="dashboard-sidebar" aria-label="Organizer dashboard navigation">
+			<details class="sidebar-menu" open>
+				<summary class="sidebar-toggle" aria-label="Toggle dashboard navigation">
+					<span class="sidebar-toggle-icon" aria-hidden="true">☰</span>
+					<span>Menu</span>
+				</summary>
+
+				<div class="sidebar-inner">
+					<a class="brand dashboard-brand" href="../index.html" aria-label="LifeLink home">
+						<span class="brand-mark" aria-hidden="true">+</span>
+						<span>LifeLink</span>
+					</a>
+
+					<nav class="sidebar-nav" aria-label="Organizer dashboard pages">
+						<p class="sidebar-label">Workspace</p>
+						<a class="sidebar-link is-active" href="dashboard.html" aria-current="page">
+							<span class="sidebar-link-mark" aria-hidden="true">01</span>
+							<span>Dashboard</span>
+						</a>
+						<a class="sidebar-link" href="create-request.html">
+							<span class="sidebar-link-mark" aria-hidden="true">02</span>
+							<span>Create Blood Request</span>
+						</a>
+						<a class="sidebar-link" href="find-donors.html">
+							<span class="sidebar-link-mark" aria-hidden="true">03</span>
+							<span>Find Donors</span>
+						</a>
+						<a class="sidebar-link" href="requests.html">
+							<span class="sidebar-link-mark" aria-hidden="true">04</span>
+							<span>Manage Requests</span>
+						</a>
+						<a class="sidebar-link" href="reports.html">
+							<span class="sidebar-link-mark" aria-hidden="true">05</span>
+							<span>Reports</span>
+						</a>
+					</nav>
+
+					<button class="sidebar-logout" id="logout-button" type="button">
+						<span aria-hidden="true">↪</span>
+						<span>Logout</span>
+					</button>
+				</div>
+			</details>
+		</aside>
+
+		<main class="dashboard-main">
+			<header class="dashboard-header">
+				<div>
+					<p class="eyebrow">LifeLink workspace</p>
+					<h1>Organizer Dashboard</h1>
+					<p>Coordinate blood requests and connect people with suitable donors.</p>
+				</div>
+				<div class="dashboard-user" aria-label="Current organizer">
+					<span class="dashboard-avatar" aria-hidden="true">O</span>
+					<span id="user-name">Organizer</span>
+				</div>
+			</header>
+
+			<section class="dashboard-welcome" aria-labelledby="welcome-heading">
+				<p class="eyebrow">Your coordination workspace</p>
+				<h2 id="welcome-heading">Welcome back, <span id="welcome-name">Organizer</span>.</h2>
+				<p>Manage requests, find donors, and coordinate blood donations from one place.</p>
+			</section>
+
+			<section class="organizer-overview" aria-label="Organizer overview">
+				<article class="dashboard-card organizer-summary-card">
+					<p class="eyebrow">Requests</p>
+					<h2>Active Requests</h2>
+					<span class="organizer-summary-value" id="active-request-count">0</span>
+				</article>
+				<article class="dashboard-card organizer-summary-card">
+					<p class="eyebrow">Priority</p>
+					<h2>Urgent Requests</h2>
+					<span class="organizer-summary-value" id="urgent-request-count">0</span>
+				</article>
+				<article class="dashboard-card organizer-summary-card">
+					<p class="eyebrow">Network</p>
+					<h2>Available Donors</h2>
+					<span class="organizer-summary-value" id="available-donor-count">0</span>
+				</article>
+				<article class="dashboard-card organizer-summary-card">
+					<p class="eyebrow">Progress</p>
+					<h2>Completed</h2>
+					<span class="organizer-summary-value" id="completed-request-count">0</span>
+				</article>
+			</section>
+
+			<section class="quick-actions-section" aria-labelledby="quick-actions-heading">
+				<div class="section-title-row">
+					<div>
+						<p class="eyebrow">Shortcuts</p>
+						<h2 id="quick-actions-heading">Quick actions</h2>
+					</div>
+				</div>
+				<div class="quick-actions-grid">
+					<a class="action-card" href="create-request.html">
+						<span class="action-card-number" aria-hidden="true">01</span>
+						<span class="action-card-content">
+							<strong>Create Blood Request</strong>
+							<span>Start coordinating a new blood request.</span>
+						</span>
+						<span class="action-card-arrow" aria-hidden="true">↗</span>
+					</a>
+					<a class="action-card" href="find-donors.html">
+						<span class="action-card-number" aria-hidden="true">02</span>
+						<span class="action-card-content">
+							<strong>Find Donors</strong>
+							<span>Look for suitable donors nearby.</span>
+						</span>
+						<span class="action-card-arrow" aria-hidden="true">↗</span>
+					</a>
+					<a class="action-card" href="requests.html">
+						<span class="action-card-number" aria-hidden="true">03</span>
+						<span class="action-card-content">
+							<strong>Manage Requests</strong>
+							<span>Review and coordinate existing requests.</span>
+						</span>
+						<span class="action-card-arrow" aria-hidden="true">↗</span>
+					</a>
+				</div>
+			</section>
+
+			<div class="dashboard-grid dashboard-activity-grid">
+				<section class="dashboard-card activity-card organizer-section" aria-labelledby="recent-requests-heading">
+					<div class="section-title-row">
+						<div>
+							<p class="eyebrow">Request overview</p>
+							<h2 id="recent-requests-heading">Recent blood requests</h2>
+						</div>
+					</div>
+					<p class="section-supporting-text">Monitor the requests created by your organization.</p>
+					<div class="empty-state" id="recent-requests">
+						<span class="empty-state-mark" aria-hidden="true">+</span>
+						<h3>No requests yet.</h3>
+						<p>Create a blood request to begin coordinating donors.</p>
+					</div>
+				</section>
+
+				<section class="dashboard-card activity-card organizer-section" aria-labelledby="urgent-requests-heading">
+					<div class="section-title-row">
+						<div>
+							<p class="eyebrow">Needs attention</p>
+							<h2 id="urgent-requests-heading">Urgent requests</h2>
+						</div>
+					</div>
+					<div class="empty-state" id="urgent-requests">
+						<span class="empty-state-mark" aria-hidden="true">!</span>
+						<h3>No urgent requests.</h3>
+					</div>
+				</section>
+			</div>
+
+			<section class="dashboard-card activity-card organizer-section" aria-labelledby="organizer-activity-heading">
+				<div class="section-title-row">
+					<div>
+						<p class="eyebrow">Workspace history</p>
+						<h2 id="organizer-activity-heading">Recent activity</h2>
+					</div>
+				</div>
+				<div class="empty-state" id="organizer-activity">
+					<span class="empty-state-mark" aria-hidden="true">+</span>
+					<h3>No recent activity.</h3>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<script src="../js/app.js" defer></script>
+</body>
+</html>

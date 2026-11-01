@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Create Blood Request | LifeLink</title>
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../css/dashboard.css">
+	<style>
+		.request-form-card {
+			margin-top: 2rem;
+		}
+
+		.request-form-section + .request-form-section {
+			margin-top: var(--gap-2xl);
+			padding-top: var(--gap-2xl);
+			border-top: 1px solid var(--color-border);
+		}
+
+		.request-form-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--gap-lg) var(--gap-md);
+			margin-top: var(--gap-xl);
+		}
+
+		.request-form-grid-three {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.request-form-full-width {
+			grid-column: 1 / -1;
+		}
+
+		.field-error {
+			min-height: 1.25rem;
+			margin: 0;
+			color: var(--color-danger);
+			font-size: var(--font-size-small);
+		}
+
+		.request-form-actions {
+			display: flex;
+			align-items: center;
+			gap: var(--gap-md);
+			margin-top: var(--gap-2xl);
+			padding-top: var(--gap-lg);
+			border-top: 1px solid var(--color-border);
+		}
+
+		.request-status {
+			margin: 0;
+			color: var(--color-secondary-text);
+			font-size: var(--font-size-small);
+		}
+
+		@media (max-width: 700px) {
+			.request-form-grid,
+			.request-form-grid-three {
+				grid-template-columns: 1fr;
+			}
+
+			.request-form-full-width {
+				grid-column: auto;
+			}
+
+			.request-form-actions {
+				align-items: stretch;
+				flex-direction: column;
+			}
+		}
+	</style>
+</head>
+<body class="dashboard-page create-request-page">
+	<div class="dashboard-shell">
+		<aside class="dashboard-sidebar" aria-label="Organizer dashboard navigation">
+			<details class="sidebar-menu" open>
+				<summary class="sidebar-toggle" aria-label="Toggle dashboard navigation">
+					<span class="sidebar-toggle-icon" aria-hidden="true">☰</span>
+					<span>Menu</span>
+				</summary>
+
+				<div class="sidebar-inner">
+					<a class="brand dashboard-brand" href="../index.html" aria-label="LifeLink home">
+						<span class="brand-mark" aria-hidden="true">+</span>
+						<span>LifeLink</span>
+					</a>
+
+					<nav class="sidebar-nav" aria-label="Organizer dashboard pages">
+						<p class="sidebar-label">Workspace</p>
+						<a class="sidebar-link" href="dashboard.html">
+							<span class="sidebar-link-mark" aria-hidden="true">01</span>
+							<span>Dashboard</span>
+						</a>
+						<a class="sidebar-link is-active" href="create-request.html" aria-current="page">
+							<span class="sidebar-link-mark" aria-hidden="true">02</span>
+							<span>Create Blood Request</span>
+						</a>
+						<a class="sidebar-link" href="find-donors.html">
+							<span class="sidebar-link-mark" aria-hidden="true">03</span>
+							<span>Find Donors</span>
+						</a>
+						<a class="sidebar-link" href="requests.html">
+							<span class="sidebar-link-mark" aria-hidden="true">04</span>
+							<span>Manage Requests</span>
+						</a>
+						<a class="sidebar-link" href="reports.html">
+							<span class="sidebar-link-mark" aria-hidden="true">05</span>
+							<span>Reports</span>
+						</a>
+					</nav>
+
+					<button class="sidebar-logout" id="logout-button" type="button">
+						<span aria-hidden="true">↪</span>
+						<span>Logout</span>
+					</button>
+				</div>
+			</details>
+		</aside>
+
+		<main class="dashboard-main">
+			<header class="dashboard-header">
+				<div>
+					<p class="eyebrow">CREATE REQUEST</p>
+					<h1>Create a blood request</h1>
+					<p>Provide the details below so suitable donors can be identified and contacted.</p>
+				</div>
+				<div class="dashboard-user" aria-label="Current organizer">
+					<span class="dashboard-avatar" aria-hidden="true">O</span>
+					<span>Organizer</span>
+				</div>
+			</header>
+
+			<section class="dashboard-card request-form-card" aria-labelledby="request-form-heading">
+				<div class="section-title-row">
+					<div>
+						<p class="eyebrow">Request details</p>
+						<h2 id="request-form-heading">New blood request</h2>
+					</div>
+				</div>
+
+				<form id="request-form" novalidate>
+					<section class="request-form-section" aria-labelledby="blood-requirement-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Section 01</p>
+								<h2 id="blood-requirement-heading">Blood requirement</h2>
+							</div>
+						</div>
+						<div class="request-form-grid request-form-grid-three">
+							<div class="form-group">
+								<label for="request-blood-group">Blood group</label>
+								<select class="select" id="request-blood-group" name="bloodGroup" required aria-describedby="request-blood-group-error">
+									<option value="">Select blood group</option>
+									<option value="A+">A+</option>
+									<option value="A-">A-</option>
+									<option value="B+">B+</option>
+									<option value="B-">B-</option>
+									<option value="AB+">AB+</option>
+									<option value="AB-">AB-</option>
+									<option value="O+">O+</option>
+									<option value="O-">O-</option>
+								</select>
+								<p class="field-error" id="request-blood-group-error"></p>
+							</div>
+							<div class="form-group">
+								<label for="units-required">Units required</label>
+								<input class="input" id="units-required" name="unitsRequired" type="number" min="1" required aria-describedby="units-required-error">
+								<p class="field-error" id="units-required-error"></p>
+							</div>
+							<div class="form-group">
+								<label for="request-urgency">Urgency</label>
+								<select class="select" id="request-urgency" name="urgency" required aria-describedby="request-urgency-error">
+									<option value="">Select urgency</option>
+									<option value="Normal">Normal</option>
+									<option value="Urgent">Urgent</option>
+								</select>
+								<p class="field-error" id="request-urgency-error"></p>
+							</div>
+							<div class="form-group">
+								<label for="required-date">Required date</label>
+								<input class="input" id="required-date" name="requiredDate" type="date" required aria-describedby="required-date-error">
+								<p class="field-error" id="required-date-error"></p>
+							</div>
+						</div>
+					</section>
+
+					<section class="request-form-section" aria-labelledby="location-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Section 02</p>
+								<h2 id="location-heading">Location &amp; hospital</h2>
+							</div>
+						</div>
+						<div class="request-form-grid">
+							<div class="form-group">
+								<label for="request-hospital">Hospital / Medical Center</label>
+								<input class="input" id="request-hospital" name="hospital" type="text" required aria-describedby="request-hospital-error">
+								<p class="field-error" id="request-hospital-error"></p>
+							</div>
+							<div class="form-group">
+								<label for="request-location">Location</label>
+								<input class="input" id="request-location" name="location" type="text" required aria-describedby="request-location-error">
+								<p class="field-error" id="request-location-error"></p>
+							</div>
+							<div class="form-group request-form-full-width">
+								<label for="organization-name">Organization name</label>
+								<input class="input" id="organization-name" name="organizationName" type="text" required aria-describedby="organization-name-error">
+								<p class="field-error" id="organization-name-error"></p>
+							</div>
+						</div>
+					</section>
+
+					<section class="request-form-section" aria-labelledby="contact-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Section 03</p>
+								<h2 id="contact-heading">Contact</h2>
+							</div>
+						</div>
+						<div class="request-form-grid">
+							<div class="form-group">
+								<label for="contact-person">Contact person</label>
+								<input class="input" id="contact-person" name="contactPerson" type="text" required aria-describedby="contact-person-error">
+								<p class="field-error" id="contact-person-error"></p>
+							</div>
+							<div class="form-group">
+								<label for="contact-phone">Contact phone</label>
+								<input class="input" id="contact-phone" name="contactPhone" type="tel" required aria-describedby="contact-phone-error">
+								<p class="field-error" id="contact-phone-error"></p>
+							</div>
+						</div>
+					</section>
+
+					<section class="request-form-section" aria-labelledby="additional-information-heading">
+						<div class="section-title-row">
+							<div>
+								<p class="eyebrow">Section 04</p>
+								<h2 id="additional-information-heading">Additional information</h2>
+							</div>
+						</div>
+						<div class="request-form-grid">
+							<div class="form-group request-form-full-width">
+								<label for="request-notes">Notes</label>
+								<textarea class="textarea" id="request-notes" name="notes" placeholder="Add any additional information relevant to this request."></textarea>
+							</div>
+						</div>
+					</section>
+
+					<div class="request-form-actions">
+						<button class="button button-primary" id="create-request" type="submit">Create Blood Request</button>
+						<button class="button button-outline" type="reset">Clear</button>
+						<p class="request-status" id="request-status" role="status" aria-live="polite"></p>
+					</div>
+				</form>
+			</section>
+		</main>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const requestForm = document.getElementById('request-form');
+			const requestStatus = document.getElementById('request-status');
+			const requiredFields = [
+				['request-blood-group', 'Select a blood group.'],
+				['units-required', 'Enter at least 1 unit.'],
+				['request-urgency', 'Select an urgency.'],
+				['required-date', 'Select a required date.'],
+				['request-hospital', 'Enter a hospital or medical center.'],
+				['request-location', 'Enter a location.'],
+				['organization-name', 'Enter an organization name.'],
+				['contact-person', 'Enter a contact person.'],
+				['contact-phone', 'Enter a contact phone number.']
+			];
+
+			const clearErrors = () => {
+				requestForm.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
+				requestForm.querySelectorAll('.input-error').forEach((field) => field.classList.remove('input-error'));
+				requestForm.querySelectorAll('.field-error').forEach((message) => { message.textContent = ''; });
+			};
+
+			requestForm.addEventListener('submit', (event) => {
+				event.preventDefault();
+				clearErrors();
+				requestStatus.textContent = '';
+				let firstInvalidField = null;
+
+				requiredFields.forEach(([fieldId, message]) => {
+					const field = document.getElementById(fieldId);
+					const error = document.getElementById(`${fieldId}-error`);
+					const isEmpty = !field.value.trim();
+					const hasInvalidUnits = fieldId === 'units-required' && Number(field.value) < 1;
+
+					if (isEmpty || hasInvalidUnits) {
+						field.classList.add('input-error');
+						field.setAttribute('aria-invalid', 'true');
+						error.textContent = message;
+						firstInvalidField = firstInvalidField || field;
+					}
+				});
+
+				if (firstInvalidField) {
+					firstInvalidField.focus();
+					return;
+				}
+
+				requestStatus.textContent = 'Request form ready. Firebase will be connected next.';
+			});
+
+			requestForm.addEventListener('reset', () => {
+				window.setTimeout(() => {
+					clearErrors();
+					requestStatus.textContent = '';
+				}, 0);
+			});
+		});
+	</script>
+	<script src="../js/app.js" defer></script>
+<script type="module" src="../js/organizer.js"></script>
+</body>
+</html>
